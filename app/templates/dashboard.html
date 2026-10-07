@@ -76,6 +76,59 @@
 <div class="layout">
     <div class="main-col">
 
+        <!-- ============ ANALYSES IA (en premier, juste sous le ticker) ============ -->
+        {% if briefings %}
+        <section class="analysis-section" aria-labelledby="titre-analyses">
+            <div class="section-head">
+                <h2 id="titre-analyses" class="section-title">Analyses IA</h2>
+                <span class="section-hint">Synthèses générées par catégorie</span>
+            </div>
+            <div class="analysis-grid">
+                {% for c in category_meta %}
+                {% if c.name in briefings %}
+                <article class="analysis-card-full">
+                    <h3 class="analysis-card-title"><span class="cat-bar" style="background:{{ c.color }}"></span>{{ c.name }}</h3>
+                    <p class="analysis-card-text">{{ briefing_excerpts.get(c.name, '') }}</p>
+                    <button class="btn btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#modal-cat-{{ c.id }}" type="button">Lire l'analyse complète →</button>
+                </article>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Modales d'analyse (contenu nettoyé, jamais de HTML brut) -->
+            {% for c in category_meta %}
+            {% if c.name in briefings %}
+            <div class="modal fade" id="modal-cat-{{ c.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">{{ c.name }}</h3>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                        </div>
+                        <div class="modal-body analysis-modal-body">
+                            {% set blocks = briefing_blocks_map.get(c.name, []) %}
+                            {% if blocks %}
+                                {% for kind, val in blocks %}
+                                    {% if kind == 'h' %}<h4 class="analysis-h">{{ val }}</h4>
+                                    {% elif kind == 'p' %}<p class="analysis-p">{{ val }}</p>
+                                    {% elif kind == 'ul' %}<ul class="analysis-ul">{% for it in val %}<li>{{ it }}</li>{% endfor %}</ul>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <p class="analysis-p">{{ briefing_excerpts.get(c.name, '') }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-ghost btn-sm" data-bs-dismiss="modal">Fermer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </section>
+        {% endif %}
+
         <!-- ============ À LA UNE ============ -->
         <section class="hero" id="a-la-une" aria-labelledby="titre-une">
             <div class="section-head">
@@ -190,59 +243,6 @@
             <p><strong>Aucune catégorie configurée.</strong></p>
         </div>
         {% endfor %}
-
-        <!-- ============ ANALYSES IA (pleine largeur, tout visible) ============ -->
-        {% if briefings %}
-        <section class="analysis-section" aria-labelledby="titre-analyses">
-            <div class="section-head">
-                <h2 id="titre-analyses" class="section-title">Analyses IA</h2>
-                <span class="section-hint">Synthèses générées par catégorie</span>
-            </div>
-            <div class="analysis-grid">
-                {% for c in category_meta %}
-                {% if c.name in briefings %}
-                <article class="analysis-card-full">
-                    <h3 class="analysis-card-title"><span class="cat-bar" style="background:{{ c.color }}"></span>{{ c.name }}</h3>
-                    <p class="analysis-card-text">{{ briefing_excerpts.get(c.name, '') }}</p>
-                    <button class="btn btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#modal-cat-{{ c.id }}" type="button">Lire l'analyse complète →</button>
-                </article>
-                {% endif %}
-                {% endfor %}
-            </div>
-
-            <!-- Modales d'analyse (contenu nettoyé, jamais de HTML brut) -->
-            {% for c in category_meta %}
-            {% if c.name in briefings %}
-            <div class="modal fade" id="modal-cat-{{ c.id }}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3 class="modal-title">{{ c.name }}</h3>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                        </div>
-                        <div class="modal-body analysis-modal-body">
-                            {% set blocks = briefing_blocks_map.get(c.name, []) %}
-                            {% if blocks %}
-                                {% for kind, val in blocks %}
-                                    {% if kind == 'h' %}<h4 class="analysis-h">{{ val }}</h4>
-                                    {% elif kind == 'p' %}<p class="analysis-p">{{ val }}</p>
-                                    {% elif kind == 'ul' %}<ul class="analysis-ul">{% for it in val %}<li>{{ it }}</li>{% endfor %}</ul>
-                                    {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                <p class="analysis-p">{{ briefing_excerpts.get(c.name, '') }}</p>
-                            {% endif %}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-ghost btn-sm" data-bs-dismiss="modal">Fermer</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-            {% endfor %}
-        </section>
-        {% endif %}
 
     </div>
 
