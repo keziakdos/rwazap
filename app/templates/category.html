@@ -25,7 +25,18 @@
                         <h3 class="modal-title">{{ category.name }} — analyse</h3>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                     </div>
-                    <div class="modal-body analysis-full">{{ briefing.content | striptags }}</div>
+                    <div class="modal-body analysis-modal-body">
+                        {% if briefing_blocks %}
+                            {% for kind, val in briefing_blocks %}
+                                {% if kind == 'h' %}<h4 class="analysis-h">{{ val }}</h4>
+                                {% elif kind == 'p' %}<p class="analysis-p">{{ val }}</p>
+                                {% elif kind == 'ul' %}<ul class="analysis-ul">{% for it in val %}<li>{{ it }}</li>{% endfor %}</ul>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <p class="analysis-p">{{ briefing_excerpt }}</p>
+                        {% endif %}
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-ghost btn-sm" data-bs-dismiss="modal">Fermer</button>
                     </div>

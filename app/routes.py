@@ -43,6 +43,9 @@ def clean_text(raw):
     if not raw:
         return ''
     text = str(raw)
+    # Clôtures markdown (```html ... ```) renvoyées parfois par l'IA
+    text = re.sub(r'```+\s*html\s*', ' ', text, flags=re.IGNORECASE)
+    text = re.sub(r'```+', ' ', text)
     # Retire scripts/styles
     text = re.sub(r'<(script|style)[^>]*>.*?</\1>', ' ', text, flags=re.DOTALL | re.IGNORECASE)
     # <br>, </p>, </li>, </h1..h6> -> espaces/points
@@ -66,6 +69,66 @@ def excerpt(text, length=160):
         return text
     cut = text[:length].rsplit(' ', 1)[0]
     return cut + '…'
+
+
+def briefing_blocks(raw):
+    """Découpe un briefing IA en blocs propres (titre/para/liste) pour affichage structuré.
+
+    Retourne une liste de (kind, value) où kind vaut 'h', 'p' ou 'ul'
+    (value = texte, ou liste de textes pour 'ul'). Aucun HTML brut,
+    aucune clôture markdown ne subsiste.
+    """
+    if not raw:
+        return []
+    text = str(raw)
+    # Clôtures markdown éventuelles (```html ... ```)
+    text = re.sub(r'```+\s*html\s*', ' ', text, flags=re.IGNORECASE)
+    text = re.sub(r'```+', ' ', text)
+    text = re.sub(r'^\s*html\s+', '', text, flags=re.IGNORECASE)
+
+    token_re = re.compile(
+        r'<h3[^>]*>(.*?)</h3>|<p[^>]*>(.*?)</p>|<li[^>]*>(.*?)</li>|<a[^>]*>(.*?)</a>',
+        re.DOTALL | re.IGNORECASE)
+    blocks = []
+    current_ul = []
+
+    def flush_ul():
+        if current_ul:
+            blocks.append(('ul', list(current_ul)))
+            current_ul.clear()
+
+    def push_paragraphs(blob):
+        cleaned = clean_text(re.sub(r'</?(ul|ol|div|br)[^>]*>', ' ', blob, flags=re.IGNORECASE))
+        for para in [p.strip('` \t') for p in cleaned.split('\n') if p.strip('` \t')]:
+            flush_ul()
+            blocks.append(('p', para))
+
+    pos = 0
+    for m in token_re.finditer(text):
+        push_paragraphs(text[pos:m.start()])
+        h, p, li, a = m.group(1), m.group(2), m.group(3), m.group(4)
+        if h is not None:
+            t = clean_text(h).strip('` \t')
+            flush_ul()
+            if t:
+                blocks.append(('h', t))
+        elif p is not None:
+            for para in [x.strip('` \t') for x in clean_text(p).split('\n') if x.strip('` \t')]:
+                flush_ul()
+                blocks.append(('p', para))
+        elif li is not None:
+            t = clean_text(li).strip('` \t')
+            if t:
+                current_ul.append(t)
+        elif a is not None:
+            t = clean_text(a).strip('` \t')
+            if t:
+                flush_ul()
+                blocks.append(('p', t))
+        pos = m.end()
+    push_paragraphs(text[pos:])
+    flush_ul()
+    return blocks
 
 
 def source_domain(url):
@@ -293,6 +356,7 @@ def dashboard():
                          category_meta=category_meta,
                          briefings=briefings,
                          briefing_excerpts=briefing_excerpts,
+                         briefing_blocks_map={name: briefing_blocks(b.content) for name, b in briefings.items()},
                          articles_by_category=articles_by_category,
                          hero_main=hero_main,
                          hero_secondary=hero_secondary,
@@ -324,6 +388,7 @@ def category_page(category_id):
                            category_slug=slugify(cat.name),
                            articles=serialized,
                            briefing=last_briefing,
+                           briefing_blocks=briefing_blocks(last_briefing.content) if last_briefing else [],
                            briefing_excerpt=briefing_ex)
 
 # 5. Force Scrape
