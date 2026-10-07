@@ -1,0 +1,25 @@
+# Base de données (jamais committée : contient les données de prod)
+db/*.sqlite
+db/*.sqlite-*
+*.sqlite
+
+# Secrets / env local
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# OS / éditeurs
+.DS_Store
+.vscode/
+.idea/
+
+# Backups locaux
+*.bak
+*.tar.gz
+/tmp/

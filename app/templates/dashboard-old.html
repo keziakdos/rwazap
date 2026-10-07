@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="alert alert-danger d-flex align-items-center shadow-sm p-2" role="alert">
+    <div class="me-2 fw-bold text-uppercase bg-danger text-white px-2 rounded">
+        BREAKING
+    </div>
+    <div class="fw-bold w-100 text-dark">
+        <marquee scrollamount="8">
+            {{ flash_info | safe }}
+        </marquee>
+    </div>
+</div>
+
+
+<div class="row">
+
+
+<div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>🌍 Le Point Smart News</h2>
+                {% if user.is_admin %}
+                <a href="{{ url_for('main.force_scrape') }}" class="btn btn-warning btn-sm">
+                    ⚡ Générer les Briefings (IA)
+                </a>
+                {% endif %}
+            </div>
+
+            {% if briefings %}
+                {% for category_name, briefing in briefings.items() %}
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between">
+                        <h5 class="mb-0">{{ category_name }}</h5>
+                        <small>{{ briefing.date.strftime('%d/%m à %H:%M') }}</small>
+                    </div>
+                    <div class="card-body">
+                        {{ briefing.content | safe }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-warning">
+                    Aucun briefing disponible. Lancez la mise à jour !
+                </div>
+            {% endif %}
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="col-lg-3">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">📈 Marchés</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for item in market_data %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ item.name }}</strong><br>
+                        <small class="text-muted">{{ item.symbol }}</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">{{ item.price }} $</div>
+                        {% if item.change >= 0 %}
+                        <span class="text-success small">▲ +{{ item.change }}%</span>
+                        {% else %}
+                        <span class="text-danger small">▼ {{ item.change }}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-3 text-muted small">Chargement des cours...</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card bg-light border-0">
+            <div class="card-body">
+                <small class="text-muted">Publicité ou Infos Admin</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

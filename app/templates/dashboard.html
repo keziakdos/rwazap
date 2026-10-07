@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Rwazap News — À la une et par catégories{% endblock %}
+
+{# ============ Composant carte d'actualité réutilisable ============ #}
+{% macro news_card(a, cat_name='', cat_color='#1d4ed8', cat_slug='', large=false) %}
+<article class="news-card {{ 'news-card-large' if large else '' }}" data-searchable="{{ a.title }} {{ a.domain }} {{ cat_name }}">
+    <a class="card-media" href="{{ a.url }}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+        {% if a.image_url %}
+        <img src="{{ a.image_url }}" alt="{{ a.title }}" loading="lazy" width="640" height="360">
+        {% else %}
+        <span class="card-media-fallback" aria-hidden="true">
+            <span class="fallback-pattern"></span>
+            <span class="fallback-letter">{{ (cat_name or a.category_name or 'R')[:1] }}</span>
+        </span>
+        {% endif %}
+        <span class="card-badge" style="background:{{ cat_color }}">{{ cat_name or a.category_name }}</span>
+    </a>
+    <div class="card-body">
+        <h3 class="card-title">
+            <a href="{{ a.url }}" target="_blank" rel="noopener">{{ a.title_short or a.title }}</a>
+        </h3>
+        {% if a.summary_short %}
+        <p class="card-excerpt">{{ a.summary_short }}</p>
+        {% endif %}
+        <p class="card-meta">
+            <img class="source-favicon" src="https://www.google.com/s2/favicons?domain={{ a.domain }}&sz=32" alt="" loading="lazy" width="14" height="14" onerror="this.style.display='none'">
+            <span class="meta-source">{{ a.domain }}</span>
+            <span class="meta-sep" aria-hidden="true">·</span>
+            <time>{{ a.time_ago }}</time>
+        </p>
+    </div>
+</article>
+{% endmacro %}
+
+{% macro skeleton_card() %}
+<div class="news-card skeleton" aria-hidden="true">
+    <div class="card-media skeleton-block"></div>
+    <div class="card-body">
+        <div class="skeleton-line w-40"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line w-80"></div>
+    </div>
+</div>
+{% endmacro %}
+
+{% block content %}
+
+<!-- Ticker EN DIRECT -->
+<div class="ticker" role="marquee" aria-label="Informations en direct">
+    <span class="ticker-label"><span class="live-dot" aria-hidden="true"></span> En direct</span>
+    <div class="ticker-viewport">
+        {% if flash_items %}
+        <div class="ticker-track">
+            {% for f in flash_items %}
+            <a class="ticker-item" href="#cat-{{ f.category_slug }}">
+                <strong>{{ f.category }}</strong><span aria-hidden="true"> — </span>{{ f.content_short }}
+            </a>
+            <span class="ticker-sep" aria-hidden="true">•</span>
+            {% endfor %}
+            {# doublon pour boucle continue #}
+            {% for f in flash_items %}
+            <a class="ticker-item" href="#cat-{{ f.category_slug }}" tabindex="-1" aria-hidden="true">
+                <strong>{{ f.category }}</strong><span aria-hidden="true"> — </span>{{ f.content_short }}
+            </a>
+            <span class="ticker-sep" aria-hidden="true">•</span>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="ticker-empty">En attente des dernières informations…</p>
+        {% endif %}
+    </div>
+</div>
+
+<p id="search-empty" class="empty-state" style="display:none">Aucun article affiché ne correspond à cette recherche.</p>
+
+<div class="layout">
+    <div class="main-col">
+
+        <!-- ============ À LA UNE ============ -->
+        <section class="hero" id="a-la-une" aria-labelledby="titre-une">
+            <div class="section-head">
+                <h2 id="titre-une" class="section-title">À la une</h2>
+                <span class="section-hint">Les informations les plus récentes</span>
+            </div>
+            {% if hero_main %}
+            <div class="hero-grid">
+                <article class="hero-main" data-searchable="{{ hero_main.title }} {{ hero_main.domain }}">
+                    <a class="hero-media" href="{{ hero_main.url }}" target="_blank" rel="noopener" aria-label="{{ hero_main.title }}">
+                        {% if hero_main.image_url %}
+                        <img src="{{ hero_main.image_url }}" alt="{{ hero_main.title }}" loading="eager" fetchpriority="high" width="880" height="495">
+                        {% else %}
+                        <span class="card-media-fallback hero-fallback" aria-hidden="true">
+                            <span class="fallback-pattern"></span>
+                            <span class="fallback-letter">{{ (hero_main.category_name or 'R')[:1] }}</span>
+                        </span>
+                        {% endif %}
+                        <span class="card-badge" style="background:{{ hero_main.category_color }}">{{ hero_main.category_name }}</span>
+                    </a>
+                    <div class="hero-text">
+                        <h3 class="hero-title">
+                            <a href="{{ hero_main.url }}" target="_blank" rel="noopener">{{ hero_main.title }}</a>
+                        </h3>
+                        {% if hero_main.summary_short %}
+                        <p class="hero-excerpt">{{ hero_main.summary_short }}</p>
+                        {% elif briefing_excerpts and hero_main.category_name in briefing_excerpts %}
+                        <p class="hero-excerpt">{{ briefing_excerpts[hero_main.category_name] }}</p>
+                        {% endif %}
+                        <p class="card-meta">
+                            <img class="source-favicon" src="https://www.google.com/s2/favicons?domain={{ hero_main.domain }}&sz=32" alt="" loading="lazy" width="14" height="14" onerror="this.style.display='none'">
+                            <span class="meta-source">{{ hero_main.domain }}</span>
+                            <span class="meta-sep" aria-hidden="true">·</span>
+                            <time>{{ hero_main.time_ago }}</time>
+                        </p>
+                        <a class="btn btn-primary btn-sm" href="{{ hero_main.url }}" target="_blank" rel="noopener">Lire l'article d'origine →</a>
+                    </div>
+                </article>
+                <div class="hero-side">
+                    {% for a in hero_secondary %}
+                    <article class="hero-mini" data-searchable="{{ a.title }} {{ a.domain }}">
+                        <a class="hero-mini-media" href="{{ a.url }}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                            {% if a.image_url %}
+                            <img src="{{ a.image_url }}" alt="" loading="lazy" width="320" height="180">
+                            {% else %}
+                            <span class="card-media-fallback mini-fallback" aria-hidden="true">
+                                <span class="fallback-pattern"></span>
+                                <span class="fallback-letter">{{ (a.category_name or 'R')[:1] }}</span>
+                            </span>
+                            {% endif %}
+                        </a>
+                        <div>
+                            <p class="mini-cat" style="color:{{ a.category_color }}">{{ a.category_name }}</p>
+                            <h4 class="mini-title"><a href="{{ a.url }}" target="_blank" rel="noopener">{{ a.title_short or a.title }}</a></h4>
+                            <p class="card-meta small"><span class="meta-source">{{ a.domain }}</span><span class="meta-sep" aria-hidden="true">·</span><time>{{ a.time_ago }}</time></p>
+                        </div>
+                    </article>
+                    {% endfor %}
+                    {% if briefing_excerpts %}
+                    <div class="briefing-note">
+                        <h4>📝 L'essentiel par catégorie</h4>
+                        {% for c in category_meta[:4] %}
+                            {% if c.briefing_excerpt %}
+                            <p><strong>{{ c.name }} :</strong> {{ c.briefing_excerpt }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p><strong>Aucune actualité pour le moment.</strong></p>
+                <p>Les articles apparaîtront ici dès la prochaine mise à jour des flux.</p>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- ============ SECTIONS PAR CATÉGORIE ============ -->
+        {% for c in category_meta %}
+        {% set arts = articles_by_category.get(c.name, []) %}
+        <section class="category-section" id="cat-{{ c.slug }}" aria-labelledby="titre-{{ c.slug }}">
+            <div class="section-head">
+                <h2 id="titre-{{ c.slug }}" class="section-title"><span class="cat-bar" style="background:{{ c.color }}"></span>{{ c.name }}</h2>
+                {% if arts|length > 3 %}
+                <a class="see-all" href="{{ url_for('main.category_page', category_id=c.id) }}">Voir tout →</a>
+                {% endif %}
+            </div>
+            {% if c.briefing_excerpt %}
+            <p class="category-briefing">{{ c.briefing_excerpt }}</p>
+            {% endif %}
+            {% if arts %}
+            <div class="news-grid">
+                {% for a in arts[:3] %}
+                    {{ news_card(a, c.name, c.color, c.slug) }}
+                {% endfor %}
+            </div>
+            {% if arts|length > 3 %}
+            <div class="more-row">
+                <a class="btn btn-ghost btn-sm" href="{{ url_for('main.category_page', category_id=c.id) }}">Voir les {{ arts|length - 3 }} article(s) suivant(s) de {{ c.name }} →</a>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="empty-state">
+                <p><strong>Pas encore d'actualité dans cette catégorie.</strong></p>
+                <p>Revenez après la prochaine actualisation des flux RSS.</p>
+            </div>
+            {% endif %}
+        </section>
+        {% else %}
+        <div class="empty-state">
+            <p><strong>Aucune catégorie configurée.</strong></p>
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <!-- ============ SIDEBAR MARCHÉS (compacte 25-30%) ============ -->
+    <aside class="side-col" id="marches" aria-label="Marchés financiers">
+        <section class="market-card">
+            <h2 class="market-title">Marchés <span class="market-live">en direct</span></h2>
+            {% if market_data %}
+            <ul class="market-list">
+                {% for m in market_data %}
+                <li class="market-item">
+                    <div class="market-info">
+                        <strong class="market-symbol">{{ m.symbol }}</strong>
+                        <span class="market-name">{{ m.name }}</span>
+                        {% if m.spark and m.spark|length > 1 %}
+                        <svg class="spark" viewBox="0 0 60 20" width="60" height="20" aria-hidden="true" preserveAspectRatio="none">
+                            {% set mn = m.spark|min %}{% set mx = m.spark|max %}{% set span = (mx - mn) if (mx - mn) != 0 else 1 %}
+                            <polyline points="{% for v in m.spark %}{{ (loop.index0 * 60 / (m.spark|length - 1))|round(1) }},{{ (18 - ((v - mn) / span) * 16)|round(1) }} {% endfor %}"
+                                fill="none" stroke="{{ '#10b981' if m.change >= 0 else '#ef4444' }}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <div class="market-quote">
+                        <strong class="market-price">{{ '{:,}'.format(m.price).replace(',', ' ') }}</strong>
+                        <span class="market-change {{ 'up' if m.change >= 0 else 'down' }}">{{ '▲' if m.change >= 0 else '▼' }} {{ m.change }}%</span>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="empty-state small">Cours indisponibles pour le moment.</p>
+            {% endif %}
+            <p class="market-note">Données indicatives · Yahoo Finance</p>
+        </section>
+
+        {% if briefings %}
+        <section class="analysis-card">
+            <h2 class="analysis-title">Analyses IA</h2>
+            {% for cname, b in briefings.items() %}
+            <details class="analysis-item">
+                <summary>{{ cname }}</summary>
+                <div class="analysis-body">{{ briefing_excerpts.get(cname, '') }}</div>
+                <button class="btn btn-ghost btn-sm analysis-open" data-bs-toggle="modal" data-bs-target="#modal-{{ loop.index }}" type="button">Lire l'analyse complète →</button>
+            </details>
+            {% endfor %}
+        </section>
+
+        <!-- Modales d'analyse (contenu nettoyé, jamais de HTML brut) -->
+        {% for cname, b in briefings.items() %}
+        <div class="modal fade" id="modal-{{ loop.index }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">{{ cname }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                    </div>
+                    <div class="modal-body analysis-full">{{ b.content | striptags }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-ghost btn-sm" data-bs-dismiss="modal">Fermer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if user.is_admin %}
+        <a class="btn btn-ghost btn-sm admin-card" href="{{ url_for('main.admin_panel') }}">⚙️ Gérer les sources</a>
+        {% endif %}
+    </aside>
+</div>
+
+<!-- Skeletons (affichés brièvement si JS lent / état de chargement) -->
+<template id="skeleton-template">
+    <div class="news-grid">
+        {{ skeleton_card() }}{{ skeleton_card() }}{{ skeleton_card() }}
+    </div>
+</template>
+
+{% endblock %}

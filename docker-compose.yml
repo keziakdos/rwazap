@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: rwazap_news_app
+    restart: always
+    ports:
+      - "8001:5000"
+    volumes:
+      - ./app:/app/app
+      - ./db:/app/db
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=production
+      - SECRET_KEY=cle_secrete_rwazap_2024_complexe
+      - GOOGLE_API_KEY=AIzaSyDXXXd-K0wnkoHy68rwvEvAMtw3FY6WX98

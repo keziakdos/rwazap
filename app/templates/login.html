@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Connexion — Rwazap News{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-card">
+        <p class="mini-cat" style="color:var(--primary)">Rwazap News</p>
+        <h1>Connexion</h1>
+        <p class="text-muted">Accédez à votre fil d'actualité personnalisé.</p>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="email">Email</label>
+                <input id="email" type="email" name="email" class="form-control" required autocomplete="email">
+            </div>
+            <div class="mb-3">
+                <label for="password">Mot de passe</label>
+                <input id="password" type="password" name="password" class="form-control" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Se connecter</button>
+        </form>
+        <p class="mt-3 text-center"><small>Pas encore de compte ? <a href="{{ url_for('main.register') }}">S'inscrire</a></small></p>
+    </div>
+</div>
+{% endblock %}

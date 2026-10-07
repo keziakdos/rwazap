@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }} — Rwazap News{% endblock %}
+
+{% block content %}
+<nav aria-label="Fil d'Ariane" class="breadcrumb-nav">
+    <a href="{{ url_for('main.dashboard') }}">← Retour à l'accueil</a>
+</nav>
+
+<section class="category-section">
+    <div class="section-head">
+        <h1 class="section-title"><span class="cat-bar" style="background:{{ category_color }}"></span>{{ category.name }}</h1>
+        <span class="section-hint">{{ articles|length }} article(s) récent(s)</span>
+    </div>
+
+    {% if briefing_excerpt %}
+    <div class="briefing-full">
+        <h2>📝 L'essentiel</h2>
+        <p>{{ briefing_excerpt }}</p>
+        {% if briefing %}
+        <button class="btn btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#modal-briefing" type="button">Lire l'analyse complète →</button>
+        <div class="modal fade" id="modal-briefing" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">{{ category.name }} — analyse</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                    </div>
+                    <div class="modal-body analysis-full">{{ briefing.content | striptags }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-ghost btn-sm" data-bs-dismiss="modal">Fermer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if articles %}
+    <div class="news-grid">
+        {% for a in articles %}
+        <article class="news-card" data-searchable="{{ a.title }} {{ a.domain }}">
+            <a class="card-media" href="{{ a.url }}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                {% if a.image_url %}
+                <img src="{{ a.image_url }}" alt="{{ a.title }}" loading="lazy" width="640" height="360">
+                {% else %}
+                <span class="card-media-fallback" aria-hidden="true">
+                    <span class="fallback-pattern"></span>
+                    <span class="fallback-letter">{{ category.name[:1] }}</span>
+                </span>
+                {% endif %}
+                <span class="card-badge" style="background:{{ a.category_color }}">{{ a.category_name }}</span>
+            </a>
+            <div class="card-body">
+                <h2 class="card-title">
+                    <a href="{{ a.url }}" target="_blank" rel="noopener">{{ a.title }}</a>
+                </h2>
+                {% if a.summary_short %}
+                <p class="card-excerpt">{{ a.summary_short }}</p>
+                {% endif %}
+                <p class="card-meta">
+                    <img class="source-favicon" src="https://www.google.com/s2/favicons?domain={{ a.domain }}&sz=32" alt="" loading="lazy" width="14" height="14" onerror="this.style.display='none'">
+                    <span class="meta-source">{{ a.domain }}</span>
+                    <span class="meta-sep" aria-hidden="true">·</span>
+                    <time>{{ a.time_ago }}</time>
+                </p>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p><strong>Pas encore d'actualité dans cette catégorie.</strong></p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
