@@ -191,6 +191,47 @@
         </div>
         {% endfor %}
 
+        <!-- ============ ANALYSES IA (pleine largeur, tout visible) ============ -->
+        {% if briefings %}
+        <section class="analysis-section" aria-labelledby="titre-analyses">
+            <div class="section-head">
+                <h2 id="titre-analyses" class="section-title">Analyses IA</h2>
+                <span class="section-hint">Synthèses générées par catégorie</span>
+            </div>
+            <div class="analysis-grid">
+                {% for c in category_meta %}
+                {% if c.name in briefings %}
+                <article class="analysis-card-full">
+                    <h3 class="analysis-card-title"><span class="cat-bar" style="background:{{ c.color }}"></span>{{ c.name }}</h3>
+                    <p class="analysis-card-text">{{ briefing_excerpts.get(c.name, '') }}</p>
+                    <button class="btn btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#modal-cat-{{ c.id }}" type="button">Lire l'analyse complète →</button>
+                </article>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Modales d'analyse (contenu nettoyé, jamais de HTML brut) -->
+            {% for c in category_meta %}
+            {% if c.name in briefings %}
+            <div class="modal fade" id="modal-cat-{{ c.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">{{ c.name }}</h3>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                        </div>
+                        <div class="modal-body analysis-full">{{ briefings[c.name].content | striptags }}</div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-ghost btn-sm" data-bs-dismiss="modal">Fermer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </section>
+        {% endif %}
+
     </div>
 
     <!-- ============ SIDEBAR MARCHÉS (compacte 25-30%) ============ -->
@@ -224,37 +265,6 @@
             {% endif %}
             <p class="market-note">Données indicatives · Yahoo Finance</p>
         </section>
-
-        {% if briefings %}
-        <section class="analysis-card">
-            <h2 class="analysis-title">Analyses IA</h2>
-            {% for cname, b in briefings.items() %}
-            <details class="analysis-item">
-                <summary>{{ cname }}</summary>
-                <div class="analysis-body">{{ briefing_excerpts.get(cname, '') }}</div>
-                <button class="btn btn-ghost btn-sm analysis-open" data-bs-toggle="modal" data-bs-target="#modal-{{ loop.index }}" type="button">Lire l'analyse complète →</button>
-            </details>
-            {% endfor %}
-        </section>
-
-        <!-- Modales d'analyse (contenu nettoyé, jamais de HTML brut) -->
-        {% for cname, b in briefings.items() %}
-        <div class="modal fade" id="modal-{{ loop.index }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3 class="modal-title">{{ cname }}</h3>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                    </div>
-                    <div class="modal-body analysis-full">{{ b.content | striptags }}</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-ghost btn-sm" data-bs-dismiss="modal">Fermer</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-        {% endif %}
 
         {% if user.is_admin %}
         <a class="btn btn-ghost btn-sm admin-card" href="{{ url_for('main.admin_panel') }}">⚙️ Gérer les sources</a>
