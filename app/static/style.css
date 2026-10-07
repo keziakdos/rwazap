@@ -203,6 +203,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visibl
 }
 
 /* ---------- Sections ---------- */
+.hero, .category-section, .analysis-section, .side-col { scroll-margin-top: 124px; }
 .section-head {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
   border-bottom: 2px solid var(--ink); padding-bottom: 8px; margin-bottom: 14px;
