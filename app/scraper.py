@@ -1,6 +1,7 @@
 import feedparser
 import google.generativeai as genai
 import os
+import re
 import time
 from datetime import datetime
 from time import mktime
@@ -54,6 +55,35 @@ def generate_category_flash(model, category_name, articles_list):
         print(f"⚠️ Échec flash '{category_name}' : {type(e).__name__}: {e}")
         return None
 
+# Extrait l'image d'une entrée RSS (media:content > media:thumbnail > enclosure > <img> du contenu)
+def extract_feed_image(entry):
+    try:
+        for m in getattr(entry, 'media_content', None) or []:
+            url = (m or {}).get('url')
+            if url and url.startswith('http'):
+                return url[:500]
+        for m in getattr(entry, 'media_thumbnail', None) or []:
+            url = (m or {}).get('url')
+            if url and url.startswith('http'):
+                return url[:500]
+        for enc in getattr(entry, 'enclosures', None) or []:
+            href = enc.get('href') or ''
+            if (enc.get('type') or '').startswith('image') and href.startswith('http'):
+                return href[:500]
+        blob = entry.get('summary', '') or ''
+        try:
+            content = entry.get('content')
+            if content:
+                blob += ' ' + (content[0].get('value') or '')
+        except Exception:
+            pass
+        m = re.search(r'<img[^>]+src=["\']([^"\']+)', blob)
+        if m and m.group(1).startswith('http'):
+            return m.group(1)[:500]
+    except Exception:
+        pass
+    return None
+
 def run_scraper(app):
     print("--- Démarrage Robot (Mode Multi-Flash) ---", flush=True)
     # Borne tous les appels réseau (un flux lent ne doit jamais bloquer le robot)
@@ -86,14 +116,23 @@ def run_scraper(app):
                         dt = datetime.fromtimestamp(mktime(entry.published_parsed))
                     else: dt = datetime.utcnow()
 
-                    # Sauvegarde article
+                    # Sauvegarde article (+ image si disponible dans le flux)
                     exists = Article.query.filter_by(original_url=entry.link).first()
                     if not exists:
-                        new_art = Article(title=entry.title, original_url=entry.link, summary="...", pub_date=dt, category_id=cat.id)
+                        new_art = Article(title=entry.title, original_url=entry.link, summary="...", image_url=extract_feed_image(entry), pub_date=dt, category_id=cat.id)
                         db.session.add(new_art)
                         db.session.commit()
                         category_buffer.append({'title': entry.title, 'link': entry.link})
                     else:
+                        # Remplit l'image manquante des articles déjà connus
+                        try:
+                            if not exists.image_url:
+                                img = extract_feed_image(entry)
+                                if img:
+                                    exists.image_url = img
+                                    db.session.commit()
+                        except Exception:
+                            pass
                         if len(category_buffer) < 8:
                             category_buffer.append({'title': entry.title, 'link': entry.link})
 
