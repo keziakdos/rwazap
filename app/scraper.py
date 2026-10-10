@@ -55,7 +55,10 @@ def generate_category_flash(model, category_name, articles_list):
         return None
 
 def run_scraper(app):
-    print("--- Démarrage Robot (Mode Multi-Flash) ---")
+    print("--- Démarrage Robot (Mode Multi-Flash) ---", flush=True)
+    # Borne tous les appels réseau (un flux lent ne doit jamais bloquer le robot)
+    import socket
+    socket.setdefaulttimeout(30)
     model = configure_genai()
     
     with app.app_context():
@@ -66,10 +69,18 @@ def run_scraper(app):
             sources = Source.query.filter_by(category_id=cat.id, is_active=True).all()
             category_buffer = []
 
-            # 1. Lecture des flux
+            # 1. Lecture des flux (une source en panne ne bloque jamais les autres)
             for source in sources:
-                feed = feedparser.parse(source.url)
-                for entry in feed.entries[:3]: # 3 articles par source
+                try:
+                    feed = feedparser.parse(source.url)
+                except Exception as e:
+                    print(f"   ⚠️ Flux inaccessible ({source.name}) : {type(e).__name__}")
+                    continue
+                try:
+                    entries = feed.entries[:3]  # 3 articles par source
+                except Exception:
+                    continue
+                for entry in entries:
                     # Gestion date
                     if hasattr(entry, 'published_parsed'):
                         dt = datetime.fromtimestamp(mktime(entry.published_parsed))
