@@ -26,7 +26,7 @@
             <img class="source-favicon" src="https://www.google.com/s2/favicons?domain={{ a.domain }}&sz=32" alt="" loading="lazy" width="14" height="14" onerror="this.style.display='none'">
             <span class="meta-source">{{ a.domain }}</span>
             <span class="meta-sep" aria-hidden="true">·</span>
-            <time>{{ a.time_ago }}</time>
+            <time>{{ a.date_str or a.time_ago }}</time>
         </p>
     </div>
 </article>
@@ -88,6 +88,9 @@
                 {% if c.name in briefings %}
                 <article class="analysis-card-full">
                     <h3 class="analysis-card-title"><span class="cat-bar" style="background:{{ c.color }}"></span>{{ c.name }}</h3>
+                    {% if c.briefing_date_str %}
+                    <p class="analysis-date">Analyse générée le {{ c.briefing_date_str }}</p>
+                    {% endif %}
                     <p class="analysis-card-text">{{ briefing_excerpts.get(c.name, '') }}</p>
                     <button class="btn btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#modal-cat-{{ c.id }}" type="button">Lire l'analyse complète →</button>
                 </article>
@@ -105,6 +108,9 @@
                             <h3 class="modal-title">{{ c.name }}</h3>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                         </div>
+                        {% if c.briefing_date_str %}
+                        <p class="analysis-date modal-date">Analyse générée le {{ c.briefing_date_str }}</p>
+                        {% endif %}
                         <div class="modal-body analysis-modal-body">
                             {% set blocks = briefing_blocks_map.get(c.name, []) %}
                             {% if blocks %}
@@ -162,7 +168,7 @@
                             <img class="source-favicon" src="https://www.google.com/s2/favicons?domain={{ hero_main.domain }}&sz=32" alt="" loading="lazy" width="14" height="14" onerror="this.style.display='none'">
                             <span class="meta-source">{{ hero_main.domain }}</span>
                             <span class="meta-sep" aria-hidden="true">·</span>
-                            <time>{{ hero_main.time_ago }}</time>
+                            <time>{{ hero_main.date_str or hero_main.time_ago }}</time>
                         </p>
                         <a class="btn btn-primary btn-sm" href="{{ hero_main.url }}" target="_blank" rel="noopener">Lire l'article d'origine →</a>
                     </div>
@@ -183,7 +189,7 @@
                         <div>
                             <p class="mini-cat" style="color:{{ a.category_color }}">{{ a.category_name }}</p>
                             <h4 class="mini-title"><a href="{{ a.url }}" target="_blank" rel="noopener">{{ a.title_short or a.title }}</a></h4>
-                            <p class="card-meta small"><span class="meta-source">{{ a.domain }}</span><span class="meta-sep" aria-hidden="true">·</span><time>{{ a.time_ago }}</time></p>
+                            <p class="card-meta small"><span class="meta-source">{{ a.domain }}</span><span class="meta-sep" aria-hidden="true">·</span><time>{{ a.date_str or a.time_ago }}</time></p>
                         </div>
                     </article>
                     {% endfor %}

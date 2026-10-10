@@ -15,6 +15,9 @@
     {% if briefing_excerpt %}
     <div class="briefing-full">
         <h2>📝 L'essentiel</h2>
+        {% if briefing_date_str %}
+        <p class="analysis-date">Analyse générée le {{ briefing_date_str }}</p>
+        {% endif %}
         <p>{{ briefing_excerpt }}</p>
         {% if briefing %}
         <button class="btn btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#modal-briefing" type="button">Lire l'analyse complète →</button>
@@ -73,7 +76,7 @@
                     <img class="source-favicon" src="https://www.google.com/s2/favicons?domain={{ a.domain }}&sz=32" alt="" loading="lazy" width="14" height="14" onerror="this.style.display='none'">
                     <span class="meta-source">{{ a.domain }}</span>
                     <span class="meta-sep" aria-hidden="true">·</span>
-                    <time>{{ a.time_ago }}</time>
+                    <time>{{ a.date_str or a.time_ago }}</time>
                 </p>
             </div>
         </article>

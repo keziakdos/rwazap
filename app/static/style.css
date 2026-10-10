@@ -355,6 +355,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visibl
   margin: 0; color: var(--ink-2); font-size: .9rem;
   display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
 }
+.analysis-date { margin: 0; font-size: .76rem; font-weight: 600; color: var(--ink-3); }
+.modal-date { padding: 10px 16px 0; }
 .analysis-card-full .btn { align-self: flex-start; margin-top: auto; }
 .admin-card { text-align: center; }
 

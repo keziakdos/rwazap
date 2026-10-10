@@ -131,6 +131,18 @@ def briefing_blocks(raw):
     return blocks
 
 
+def format_date(dt):
+    """Date absolue lisible : '07/10/2026 à 08:01'. Remplace le relatif 'il y a X'."""
+    if not dt:
+        return ''
+    try:
+        if isinstance(dt, str):
+            dt = datetime.fromisoformat(dt.split('.')[0])
+        return dt.strftime('%d/%m/%Y à %H:%M')
+    except Exception:
+        return ''
+
+
 def source_domain(url):
     try:
         netloc = urlparse(url or '').netloc.lower()
@@ -185,6 +197,7 @@ def serialize_article(a):
         'image_url': (getattr(a, 'image_url', None) or '').strip() or None,
         'pub_date': getattr(a, 'pub_date', None),
         'time_ago': time_ago(getattr(a, 'pub_date', None)),
+        'date_str': format_date(getattr(a, 'pub_date', None)),
         'category_id': getattr(a, 'category_id', None),
     }
 
@@ -307,6 +320,7 @@ def dashboard():
             'count': len(serialized),
             'briefing_excerpt': briefing_excerpts.get(cat.name, ''),
             'briefing_date': briefings[cat.name].date if cat.name in briefings else None,
+            'briefing_date_str': format_date(briefings[cat.name].date) if cat.name in briefings else '',
         })
 
     # B3. Section "À la une" : les 3 articles les plus récents toutes catégories
@@ -389,6 +403,7 @@ def category_page(category_id):
                            articles=serialized,
                            briefing=last_briefing,
                            briefing_blocks=briefing_blocks(last_briefing.content) if last_briefing else [],
+                           briefing_date_str=format_date(last_briefing.date) if last_briefing else '',
                            briefing_excerpt=briefing_ex)
 
 # 5. Force Scrape
