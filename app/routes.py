@@ -201,6 +201,24 @@ def serialize_article(a):
         'category_id': getattr(a, 'category_id', None),
     }
 
+# Anti-brute-force rudimentaire (en mémoire) : 5 échecs / 5 min / IP sur /login
+import time as _time
+_login_attempts = {}
+_LOGIN_WINDOW = 300
+_LOGIN_MAX = 5
+
+
+def _login_rate_limited(ip):
+    now = _time.time()
+    attempts = [t for t in _login_attempts.get(ip, []) if now - t < _LOGIN_WINDOW]
+    _login_attempts[ip] = attempts
+    return len(attempts) >= _LOGIN_MAX
+
+
+def _record_login_failure(ip):
+    _login_attempts.setdefault(ip, []).append(_time.time())
+
+
 # 1. Page d'accueil
 @main.route('/')
 def index():
@@ -213,19 +231,25 @@ def index():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
-    
+
     if request.method == 'POST':
+        ip = request.remote_addr or 'unknown'
+        if _login_rate_limited(ip):
+            flash('Trop de tentatives. Réessayez dans quelques minutes.', 'danger')
+            return render_template('login.html'), 429
         email = request.form.get('email')
         password = request.form.get('password')
         user = User.query.filter_by(email=email).first()
 
         if user and check_password_hash(user.password, password):
             if user.is_approved:
+                _login_attempts.pop(ip, None)
                 login_user(user)
                 return redirect(url_for('main.dashboard'))
             else:
                 flash('Votre compte est en attente de validation.', 'warning')
         else:
+            _record_login_failure(ip)
             flash('Email ou mot de passe incorrect.', 'danger')
 
     return render_template('login.html')
@@ -239,8 +263,12 @@ def register():
     if request.method == 'POST':
         email = request.form.get('email')
         username = request.form.get('username')
-        password = request.form.get('password')
-        
+        password = request.form.get('password') or ''
+
+        if len(password) < 8:
+            flash('Mot de passe trop court : 8 caractères minimum.', 'danger')
+            return redirect(url_for('main.register'))
+
         user_exists = User.query.filter_by(email=email).first()
         if user_exists:
             flash('Cet email existe déjà.', 'danger')
@@ -406,8 +434,8 @@ def category_page(category_id):
                            briefing_date_str=format_date(last_briefing.date) if last_briefing else '',
                            briefing_excerpt=briefing_ex)
 
-# 5. Force Scrape
-@main.route('/force-scrape')
+# 5. Force Scrape (POST uniquement : évite tout déclenchement CSRF via simple lien)
+@main.route('/force-scrape', methods=['POST'])
 @login_required
 def force_scrape():
     if not current_user.is_admin:

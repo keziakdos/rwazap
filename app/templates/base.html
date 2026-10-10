@@ -46,7 +46,10 @@
             <div class="header-actions">
                 {% if current_user.is_authenticated %}
                     {% if current_user.is_admin %}
-                    <a class="btn btn-ghost btn-sm" href="{{ url_for('main.force_scrape') }}">↻ Actualiser</a>
+                    <form method="POST" action="{{ url_for('main.force_scrape') }}" style="display:inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-ghost btn-sm">↻ Actualiser</button>
+                    </form>
                     {% endif %}
                     <a class="btn btn-ghost btn-sm" href="{{ url_for('main.logout') }}">Déconnexion</a>
                 {% else %}

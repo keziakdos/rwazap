@@ -4,7 +4,10 @@
 {% block content %}
 <div class="page-head">
     <h1>Administration</h1>
-    <a href="{{ url_for('main.force_scrape') }}" class="btn btn-primary btn-sm">↻ Forcer la mise à jour (IA)</a>
+    <form method="POST" action="{{ url_for('main.force_scrape') }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary btn-sm">↻ Forcer la mise à jour (IA)</button>
+    </form>
 </div>
 
 <div class="row g-3">
@@ -12,6 +15,7 @@
         <div class="panel-card mb-3">
             <h2 class="h5">📂 Catégories</h2>
             <form method="POST" class="row g-2 align-items-center">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="add_category">
                 <div class="col-md-8">
                     <input type="text" name="name" class="form-control form-control-sm" placeholder="Nouvelle catégorie (ex: Sport, Musique...)" required aria-label="Nom de la nouvelle catégorie">
@@ -31,6 +35,7 @@
         <div class="panel-card mb-3">
             <h2 class="h5">📰 Sources d'actualités</h2>
             <form method="POST" class="row g-2 align-items-end mb-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="add_source">
                 <div class="col-md-4">
                     <label class="small" for="src-name">Nom du site</label>
@@ -63,6 +68,7 @@
                         <td><span class="badge bg-secondary">{{ source.category.name }}</span></td>
                         <td>
                             <form method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="action" value="delete_source">
                                 <input type="hidden" name="id" value="{{ source.id }}">
                                 <button type="submit" class="btn btn-danger btn-sm py-0" aria-label="Supprimer {{ source.name }}">×</button>
@@ -80,6 +86,7 @@
         <div class="panel-card">
             <h2 class="h5">📈 Finance &amp; Marchés</h2>
             <form method="POST" class="row g-2 align-items-end mb-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="add_ticker">
                 <div class="col-md-4">
                     <label class="small" for="tk-symbol">Symbole (Yahoo)</label>
@@ -105,6 +112,7 @@
                         <td>{{ t.name }}</td>
                         <td>
                             <form method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="action" value="delete_ticker">
                                 <input type="hidden" name="id" value="{{ t.id }}">
                                 <button type="submit" class="btn btn-danger btn-sm py-0" aria-label="Supprimer {{ t.symbol }}">×</button>

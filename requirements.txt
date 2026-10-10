@@ -1,4 +1,4 @@
-Flask==3.0.0
+Flask>=3.1,<4
 requests
 gunicorn
 python-dotenv
@@ -9,5 +9,6 @@ sqlalchemy
 flask-sqlalchemy
 flask-login
 flask-bcrypt
+flask-wtf
 apscheduler
 yfinance
