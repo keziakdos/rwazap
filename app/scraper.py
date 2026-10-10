@@ -84,6 +84,24 @@ def extract_feed_image(entry):
         pass
     return None
 
+# Image de repli : og:image de la page d'article (pour les flux sans images, ex: JA, Diplo)
+def fetch_og_image(url):
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        r = requests.get(url, headers={'User-Agent': 'RwazapNews/1.0'}, timeout=12)
+        if r.status_code != 200 or 'text/html' not in r.headers.get('Content-Type', ''):
+            return None
+        soup = BeautifulSoup(r.text, 'html.parser')
+        for prop in ('og:image', 'twitter:image'):
+            tag = soup.find('meta', property=prop) or soup.find('meta', attrs={'name': prop})
+            content = (tag.get('content') or '').strip() if tag else ''
+            if content.startswith('http'):
+                return content[:500]
+    except Exception:
+        pass
+    return None
+
 def run_scraper(app):
     print("--- Démarrage Robot (Mode Multi-Flash) ---", flush=True)
     # Borne tous les appels réseau (un flux lent ne doit jamais bloquer le robot)
@@ -119,7 +137,8 @@ def run_scraper(app):
                     # Sauvegarde article (+ image si disponible dans le flux)
                     exists = Article.query.filter_by(original_url=entry.link).first()
                     if not exists:
-                        new_art = Article(title=entry.title, original_url=entry.link, summary="...", image_url=extract_feed_image(entry), pub_date=dt, category_id=cat.id)
+                        img = extract_feed_image(entry) or fetch_og_image(entry.link)
+                        new_art = Article(title=entry.title, original_url=entry.link, summary="...", image_url=img, pub_date=dt, category_id=cat.id)
                         db.session.add(new_art)
                         db.session.commit()
                         category_buffer.append({'title': entry.title, 'link': entry.link})
@@ -127,7 +146,7 @@ def run_scraper(app):
                         # Remplit l'image manquante des articles déjà connus
                         try:
                             if not exists.image_url:
-                                img = extract_feed_image(entry)
+                                img = extract_feed_image(entry) or fetch_og_image(entry.link)
                                 if img:
                                     exists.image_url = img
                                     db.session.commit()
