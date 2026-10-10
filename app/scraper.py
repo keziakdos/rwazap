@@ -175,4 +175,11 @@ def run_scraper(app):
                 
                 time.sleep(10) # Pause Google
 
+        # 3. Purge automatique (évite la surcharge disque : seuils via KEEP_*_PER_CAT)
+        try:
+            from .prune_db import prune_all
+            prune_all()
+        except Exception as e:
+            print(f"⚠️ Purge impossible (non bloquant) : {type(e).__name__}: {e}")
+
     print("--- Terminé ---")
