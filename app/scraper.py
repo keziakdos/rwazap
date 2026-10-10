@@ -15,7 +15,8 @@ def configure_genai():
         return None
     try:
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel('gemini-2.5-flash')
+        model_name = os.environ.get('GEMINI_MODEL', 'gemini-3.8-flash').strip() or 'gemini-3.8-flash'
+        return genai.GenerativeModel(model_name)
     except Exception as e:
         print(f"⚠️ Impossible d'initialiser Gemini : {e}")
         return None
