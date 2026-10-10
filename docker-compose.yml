@@ -6,7 +6,9 @@ services:
     container_name: rwazap_news_app
     restart: always
     ports:
-      - "8001:5000"
+      # Localhost uniquement : l'accès public passe par nginx (TLS).
+      # Empêche aussi la falsification de X-Forwarded-For en accès direct.
+      - "127.0.0.1:8001:5000"
     volumes:
       - ./app:/app/app
       - ./db:/app/db

@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf import CSRFProtect
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 import warnings
 
@@ -28,6 +29,8 @@ SECURITY_HEADERS = {
         "form-action 'self'; "
         "frame-ancestors 'self'"
     ),
+    # Actif uniquement via HTTPS (les navigateurs l'ignorent en HTTP).
+    'Strict-Transport-Security': 'max-age=31536000',
 }
 
 def create_app():
@@ -62,6 +65,11 @@ def create_app():
 
     # Enregistrement des routes
     app.register_blueprint(main)
+
+    # Confiance au reverse proxy nginx (une seule couche) pour IP/régime https réels.
+    # IMPORTANT : le port applicatif doit être lié à 127.0.0.1 (voir docker-compose),
+    # sinon un client direct pourrait falsifier X-Forwarded-For.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     @app.after_request
     def _security_headers(response):
