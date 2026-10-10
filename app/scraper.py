@@ -8,9 +8,17 @@ from . import db
 from .models import Source, Article, Category, DailyBriefing, CategoryFlash # Ajout CategoryFlash
 
 def configure_genai():
-    api_key = os.environ.get('GOOGLE_API_KEY')
-    if not api_key: return None
-    return genai.GenerativeModel('gemini-2.5-flash')
+    api_key = (os.environ.get('GOOGLE_API_KEY') or '').strip()
+    # Refuse les placeholders (ex: valeur d'exemple du dépôt) pour échouer vite et visiblement
+    if not api_key or 'XXX' in api_key or len(api_key) < 20:
+        print("⚠️ GOOGLE_API_KEY absente ou invalide : génération IA désactivée (articles RSS seuls).")
+        return None
+    try:
+        genai.configure(api_key=api_key)
+        return genai.GenerativeModel('gemini-2.5-flash')
+    except Exception as e:
+        print(f"⚠️ Impossible d'initialiser Gemini : {e}")
+        return None
 
 # 1. Génère le gros résumé (Briefing)
 def generate_smart_briefing(model, category_name, articles_list):
@@ -25,7 +33,9 @@ def generate_smart_briefing(model, category_name, articles_list):
     """
     try:
         return model.generate_content(prompt).text
-    except: return None
+    except Exception as e:
+        print(f"⚠️ Échec briefing '{category_name}' : {type(e).__name__}: {e}")
+        return None
 
 # 2. Génère la phrase unique (Flash)
 def generate_category_flash(model, category_name, articles_list):
@@ -39,7 +49,9 @@ def generate_category_flash(model, category_name, articles_list):
     try:
         txt = model.generate_content(prompt).text
         return txt.replace('\n', ' ').strip()
-    except: return None
+    except Exception as e:
+        print(f"⚠️ Échec flash '{category_name}' : {type(e).__name__}: {e}")
+        return None
 
 def run_scraper(app):
     print("--- Démarrage Robot (Mode Multi-Flash) ---")
@@ -75,6 +87,8 @@ def run_scraper(app):
 
             # 2. Génération IA (Briefing + Flash)
             if category_buffer:
+                if model is None:
+                    print(f"   ⏭️ {len(category_buffer)} article(s) sauvé(s) sans briefing (IA non configurée).")
                 # A. Le Briefing
                 briefing_content = generate_smart_briefing(model, cat.name, category_buffer)
                 if briefing_content:

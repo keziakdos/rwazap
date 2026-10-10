@@ -10,8 +10,14 @@ services:
     volumes:
       - ./app:/app/app
       - ./db:/app/db
+    # Les secrets vivent dans .env (NON versionné, jamais committé).
+    # Exemple de .env :
+    #   GOOGLE_API_KEY=AIza...votre_vraie_clé
+    #   SECRET_KEY=une_longue_valeur_aléatoire
+    env_file:
+      - .env
     environment:
       - FLASK_APP=run.py
       - FLASK_ENV=production
-      - SECRET_KEY=cle_secrete_rwazap_2024_complexe
-      - GOOGLE_API_KEY=AIzaSyDXXXd-K0wnkoHy68rwvEvAMtw3FY6WX98
+      - SECRET_KEY=${SECRET_KEY:-cle_secrete_rwazap_2024_complexe}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
