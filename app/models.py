@@ -72,3 +72,13 @@ class CategoryFlash(db.Model):
     date = db.Column(db.DateTime, default=datetime.utcnow)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     category = db.relationship('Category', backref=db.backref('flashes', lazy=True))
+
+# 9. Suivi des exécutions du robot (progression live + historique)
+class ScrapeJob(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    finished_at = db.Column(db.DateTime, nullable=True)
+    status = db.Column(db.String(20), default='running')  # running | done | failed
+    total_steps = db.Column(db.Integer, default=0)
+    done_steps = db.Column(db.Integer, default=0)
+    error = db.Column(db.String(500), nullable=True)

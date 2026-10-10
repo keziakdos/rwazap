@@ -165,6 +165,20 @@ a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visibl
 .cat-link:hover { background: var(--surface-2); color: var(--ink); }
 .cat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
+/* ---------- État live du robot ---------- */
+.robot-status {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 9px 16px; margin-bottom: 16px;
+  font-size: .86rem; color: var(--ink-2);
+}
+.robot-status .btn { margin-left: auto; white-space: nowrap; }
+.robot-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; }
+.robot-dot.running { background: #f59e0b; animation: pulse 1.2s infinite; }
+.robot-dot.done { background: var(--up, #059669); }
+.robot-dot.failed { background: var(--live); }
+
 /* ---------- Ticker ---------- */
 .ticker {
   display: flex; align-items: stretch; gap: 0;

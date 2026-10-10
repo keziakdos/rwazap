@@ -20,7 +20,8 @@ import sys
 from sqlalchemy import text
 
 from app import db
-from app.models import Article, Category, DailyBriefing, CategoryFlash, GlobalFlash
+from app.models import Article, Category, DailyBriefing, CategoryFlash, GlobalFlash, ScrapeJob
+from datetime import datetime, timedelta
 
 
 def _keep_ids(query_ids, keep):
@@ -84,6 +85,14 @@ def prune_all(dry_run=False):
     if not dry_run and n_g:
         GlobalFlash.query.filter(~GlobalFlash.id.in_(keep_g)).delete(synchronize_session=False)
         total_deleted += n_g
+
+    # Historique des runs du robot : 7 derniers jours maximum
+    cutoff = datetime.utcnow() - timedelta(days=7)
+    n_j = ScrapeJob.query.filter(ScrapeJob.started_at < cutoff).count()
+    print(f"Runs du robot : -{n_j} (gardés : 7 derniers jours)")
+    if not dry_run and n_j:
+        ScrapeJob.query.filter(ScrapeJob.started_at < cutoff).delete(synchronize_session=False)
+        total_deleted += n_j
 
     if dry_run:
         print("DRY-RUN : rien n'a été supprimé.")

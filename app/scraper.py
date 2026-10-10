@@ -108,10 +108,18 @@ def run_scraper(app):
     import socket
     socket.setdefaulttimeout(30)
     model = configure_genai()
-    
+
     with app.app_context():
+        from .models import ScrapeJob
+        # Tracer l'exécution pour le suivi live (widget "État du robot")
+        job = ScrapeJob(status='running', total_steps=0, done_steps=0)
+        db.session.add(job)
+        db.session.commit()
+
         categories = Category.query.all()
-        
+        job.total_steps = len(categories)
+        db.session.commit()
+
         for cat in categories:
             print(f"\n📂 Traitement : {cat.name}")
             sources = Source.query.filter_by(category_id=cat.id, is_active=True).all()
@@ -172,7 +180,14 @@ def run_scraper(app):
 
                 db.session.commit()
                 print(f"   ✅ Catégorie {cat.name} terminée.")
-                
+
+                # Progression live pour le widget "État du robot"
+                try:
+                    job.done_steps = (job.done_steps or 0) + 1
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+
                 time.sleep(10) # Pause Google
 
         # 3. Purge automatique (évite la surcharge disque : seuils via KEEP_*_PER_CAT)
@@ -182,4 +197,7 @@ def run_scraper(app):
         except Exception as e:
             print(f"⚠️ Purge impossible (non bloquant) : {type(e).__name__}: {e}")
 
+        job.status = 'done'
+        job.finished_at = datetime.utcnow()
+        db.session.commit()
     print("--- Terminé ---")

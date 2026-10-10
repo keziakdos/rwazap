@@ -45,6 +45,13 @@
 
 {% block content %}
 
+<!-- État live du robot (progression + minuterie) -->
+<div class="robot-status" id="robot-status" role="status" aria-live="polite">
+    <span class="robot-dot idle" id="robot-dot" aria-hidden="true"></span>
+    <span id="robot-text">Actualisation automatique toutes les 6 heures.</span>
+    <button id="robot-reload" class="btn btn-primary btn-sm" style="display:none" onclick="location.reload()" type="button">🔄 Afficher les nouveautés</button>
+</div>
+
 <!-- Ticker EN DIRECT -->
 <div class="ticker" role="marquee" aria-label="Informations en direct">
     <span class="ticker-label"><span class="live-dot" aria-hidden="true"></span> En direct</span>
@@ -296,5 +303,55 @@
         {{ skeleton_card() }}{{ skeleton_card() }}{{ skeleton_card() }}
     </div>
 </template>
+
+<script>
+(function () {
+    var text = document.getElementById('robot-text');
+    var dot = document.getElementById('robot-dot');
+    var reloadBtn = document.getElementById('robot-reload');
+    if (!text) return;
+    var prev = null;
+
+    function mmss(s) {
+        s = Math.max(0, s | 0);
+        var m = Math.floor(s / 60), r = s % 60;
+        return (m < 10 ? '0' + m : m) + ':' + (r < 10 ? '0' + r : r);
+    }
+    function setDot(cls) { dot.className = 'robot-dot ' + cls; }
+
+    function render(d) {
+        if (d.status === 'running') {
+            setDot('running');
+            text.textContent = 'Mise à jour en cours… ' + d.done + '/' + d.total +
+                ' catégories · ' + mmss(d.elapsed) + ' écoulées';
+            reloadBtn.style.display = 'none';
+        } else if (d.status === 'done') {
+            setDot('done');
+            text.textContent = 'Dernière mise à jour terminée le ' + (d.finished_at || d.started_at) +
+                ' · prochaine auto dans ~6 h';
+            if (prev === 'running') reloadBtn.style.display = '';
+        } else if (d.status === 'failed') {
+            setDot('failed');
+            text.textContent = 'La mise à jour a échoué' + (d.error ? ' : ' + d.error : '') +
+                ' — relancez via Actualiser.';
+            reloadBtn.style.display = 'none';
+        } else {
+            setDot('idle');
+            text.textContent = 'Actualisation automatique toutes les 6 heures.';
+            reloadBtn.style.display = 'none';
+        }
+        prev = d.status;
+    }
+
+    function poll() {
+        fetch('{{ url_for('main.scrape_status') }}', {headers: {'Accept': 'application/json'}})
+            .then(function (r) { return r.json(); })
+            .then(render)
+            .catch(function () { /* silencieux : réessai au prochain cycle */ });
+    }
+    poll();
+    setInterval(poll, 5000);
+})();
+</script>
 
 {% endblock %}

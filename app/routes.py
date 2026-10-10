@@ -1,9 +1,9 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 # ATTENTION : La ligne ci-dessous est cruciale, elle contient CategoryFlash
-from .models import User, Article, Category, Source, MarketTicker, DailyBriefing, CategoryFlash
+from .models import User, Article, Category, Source, MarketTicker, DailyBriefing, CategoryFlash, ScrapeJob
 from .scraper import run_scraper
 import threading
 import yfinance as yf
@@ -448,6 +448,17 @@ def force_scrape():
                 run_scraper(app_context)
         except Exception as e:
             print(f"Erreur background : {e}")
+            # Marquer le suivi live en échec pour que le widget l'affiche
+            try:
+                with app_context.app_context():
+                    j = ScrapeJob.query.filter_by(status='running').order_by(ScrapeJob.id.desc()).first()
+                    if j:
+                        j.status = 'failed'
+                        j.error = f"{type(e).__name__}: {e}"[:500]
+                        j.finished_at = datetime.utcnow()
+                        db.session.commit()
+            except Exception:
+                pass
 
     app = current_app._get_current_object()
     thread = threading.Thread(target=task, args=(app,))
@@ -455,6 +466,30 @@ def force_scrape():
     
     flash("Le robot a démarré en arrière-plan ! Le ruban se mettra à jour dans quelques minutes.", "info")
     return redirect(url_for('main.dashboard'))
+
+
+# État live du robot (progression + dernier run) pour le widget de suivi
+@main.route('/scrape-status')
+@login_required
+def scrape_status():
+    job = ScrapeJob.query.order_by(ScrapeJob.id.desc()).first()
+    if not job:
+        return jsonify({'status': 'never'})
+    now = datetime.utcnow()
+    started = job.started_at
+    elapsed = max(0, int((now - started).total_seconds())) if started else 0
+    payload = {
+        'status': job.status,
+        'done': job.done_steps or 0,
+        'total': job.total_steps or 0,
+        'elapsed': elapsed,
+        'started_at': format_date(started),
+    }
+    if job.finished_at:
+        payload['finished_at'] = format_date(job.finished_at)
+    if job.error:
+        payload['error'] = job.error
+    return jsonify(payload)
 
 # 6. Admin Panel
 @main.route('/admin', methods=['GET', 'POST'])
